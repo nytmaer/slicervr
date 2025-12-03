@@ -1,0 +1,9 @@
+# GitHub Sponsor button configuration
+# This adds a "❤️ Sponsor" button to your repository
+
+ko_fi: nytmaer
+
+# You can add other platforms later:
+# github: [Nytmaer]
+# patreon: username
+# custom: ['https://paypal.me/username']

@@ -1,0 +1,32 @@
+{
+  "name": "SlicerVR - In-Headset Video Editor",
+  "short_name": "SlicerVR",
+  "description": "Edit Quest recordings in VR without removing your headset",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#6200EE",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "multimedia", "productivity"],
+  "screenshots": [
+    {
+      "src": "assets/screenshots/vr-editor.jpg",
+      "sizes": "1920x1080",
+      "type": "image/jpeg"
+    }
+  ]
+}
