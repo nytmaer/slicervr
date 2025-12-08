@@ -93,23 +93,20 @@ function checkWebXRSupport() {
 async function requestFileAccess() {
     try {
         // Check if File System Access API is available
-        if (!window.showDirectoryPicker) {
+        if (!window.fileAccessManager.isSupported()) {
             console.warn('⚠️ File System Access API not supported');
-            // Fallback to file input
-            return true; // Allow to proceed, will use fallback
+            showError('Your browser doesn\'t support file access. Please use Quest Browser v28 or later.');
+            return false;
         }
         
         console.log('📁 Requesting file access...');
         
-        // Request access to Quest recordings directory
-        // On Quest, this would be /DCIM/Meta Quest/
-        const directoryHandle = await window.showDirectoryPicker({
-            mode: 'read',
-            startIn: 'videos' // Suggest starting in videos directory
-        });
+        // Request directory access
+        const directoryHandle = await window.fileAccessManager.requestDirectoryAccess();
         
-        // Store directory handle for later use
-        window.questDirectory = directoryHandle;
+        if (!directoryHandle) {
+            return false;
+        }
         
         console.log('✅ File access granted:', directoryHandle.name);
         
@@ -120,10 +117,11 @@ async function requestFileAccess() {
         
     } catch (error) {
         if (error.name === 'AbortError') {
-            console.log('User cancelled file access');
+            console.log('ℹ️ User cancelled file access');
             return false;
         }
-        console.error('File access error:', error);
+        console.error('❌ File access error:', error);
+        showError('Failed to access files: ' + error.message);
         return false;
     }
 }
@@ -134,42 +132,38 @@ async function requestFileAccess() {
 async function scanForVideos(directoryHandle) {
     try {
         console.log('🔍 Scanning for videos...');
-        const videos = [];
         
-        for await (const entry of directoryHandle.values()) {
-            if (entry.kind === 'file') {
-                const file = await entry.getFile();
-                
-                // Check if it's a video file
-                if (file.type.startsWith('video/')) {
-                    // Create video metadata
-                    const videoData = {
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        lastModified: file.lastModified,
-                        file: file,
-                        url: URL.createObjectURL(file)
-                    };
-                    
-                    // Extract duration and resolution
-                    const metadata = await extractVideoMetadata(file);
-                    Object.assign(videoData, metadata);
-                    
-                    videos.push(videoData);
-                }
-            }
+        // Use file access manager to scan
+        const videos = await window.fileAccessManager.scanForVideos(directoryHandle);
+        
+        if (videos.length === 0) {
+            console.log('ℹ️ No videos found in directory');
+            showError('No videos found. Please select a folder with .mp4 files.');
+            return [];
         }
         
         console.log(`✅ Found ${videos.length} videos`);
         
-        // Add to app state
-        window.appState.addVideosToLibrary(videos);
+        // Generate thumbnails
+        console.log('🖼️ Generating thumbnails...');
+        const videosWithThumbnails = await window.thumbnailGenerator.generateThumbnailsForVideos(
+            videos,
+            (current, total) => {
+                console.log(`📊 Thumbnail progress: ${current}/${total}`);
+                // TODO: Show progress in UI
+            }
+        );
         
-        return videos;
+        console.log('✅ Thumbnails generated');
+        
+        // Add to app state - this will trigger video grid to update
+        window.appState.addVideosToLibrary(videosWithThumbnails);
+        
+        return videosWithThumbnails;
         
     } catch (error) {
-        console.error('Error scanning videos:', error);
+        console.error('❌ Error scanning videos:', error);
+        showError('Failed to scan videos: ' + error.message);
         return [];
     }
 }
