@@ -16,7 +16,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles/main.css">
     
-    <meta name="description" content="Edit your Quest recordings in VR without taking off your headset">
+    <meta name="description" content="Edit your Quest recordings - works in VR or on desktop!">
 </head>
 <body>
     <!-- 2D Fallback UI (shown before entering VR) -->
@@ -24,9 +24,21 @@
         <div class="splash-screen">
             <h1>🎬 SlicerVR</h1>
             <p>In-Headset Video Editor for Quest</p>
-            <button id="enter-vr" class="vr-button">Enter VR Mode</button>
+            <p><strong>Works on Desktop & VR!</strong></p>
+            
+            <!-- Desktop Mode Button -->
+            <button id="desktop-mode" class="vr-button" style="margin: 10px;">
+                🖥️ Desktop Mode
+            </button>
+            
+            <!-- VR Mode Button -->
+            <button id="enter-vr" class="vr-button" style="margin: 10px;">
+                🥽 VR Mode
+            </button>
+            
             <p class="requirements">
-                <small>Requires: Meta Quest Browser, WebXR support</small>
+                <small><strong>Desktop:</strong> Chrome, Edge, or Firefox<br>
+                <strong>VR:</strong> Meta Quest Browser with WebXR</small>
             </p>
             <p class="kofi-link">
                 <small>Love this app? <a href="https://ko-fi.com/nytmaer" target="_blank" rel="noopener">☕ Buy me a coffee</a></small>
@@ -34,18 +46,21 @@
         </div>
     </div>
 
+    <!-- Hidden file input for desktop mode -->
+    <input type="file" id="desktop-file-input" webkitdirectory directory multiple style="display: none;">
+
     <!-- A-Frame VR Scene -->
     <a-scene 
         id="scene"
-        vr-mode-ui="enabled: true"
+        vr-mode-ui="enabled: false"
         loading-screen="enabled: true; backgroundColor: #121212"
         renderer="antialias: true; colorManagement: true; sortObjects: true"
-        stats>
+        stats
+        embedded>
         
         <!-- Asset Management -->
         <a-assets>
             <!-- Sounds (optional - app works without them) -->
-            <!-- Uncomment when you add sound files to assets/sounds/ -->
             <!-- <audio id="click-sound" src="assets/sounds/click.mp3" preload="auto"></audio> -->
             <!-- <audio id="success-sound" src="assets/sounds/success.mp3" preload="auto"></audio> -->
         </a-assets>
@@ -77,7 +92,6 @@
                 height="1.6875" 
                 color="#000000"
                 material="shader: flat">
-                <!-- Video will be dynamically added here -->
             </a-plane>
             
             <!-- Player Controls Below Screen -->
@@ -90,8 +104,7 @@
                     height="0.3" 
                     depth="0.05" 
                     color="#6200EE"
-                    class="clickable"
-                    sound="on: click; src: #click-sound">
+                    class="clickable">
                     <a-text value="PLAY" align="center" position="0 0 0.03" width="0.8" color="#FFF"></a-text>
                 </a-box>
                 
@@ -125,64 +138,19 @@
                 material="shader: flat">
             </a-plane>
             
-            <!-- Trim Start Handle (left) -->
-            <a-box 
-                id="trim-start"
-                position="-1.5 0 0.01"
-                width="0.05" 
-                height="0.25" 
-                depth="0.05" 
-                color="#03DAC6"
-                class="draggable clickable">
-            </a-box>
+            <!-- Trim handles and playhead -->
+            <a-box id="trim-start" position="-1.5 0 0.01" width="0.05" height="0.25" depth="0.05" color="#03DAC6" class="draggable clickable"></a-box>
+            <a-box id="trim-end" position="1.5 0 0.01" width="0.05" height="0.25" depth="0.05" color="#03DAC6" class="draggable clickable"></a-box>
+            <a-box id="playhead" position="0 0 0.02" width="0.02" height="0.25" depth="0.05" color="#FF5722"></a-box>
             
-            <!-- Trim End Handle (right) -->
-            <a-box 
-                id="trim-end"
-                position="1.5 0 0.01"
-                width="0.05" 
-                height="0.25" 
-                depth="0.05" 
-                color="#03DAC6"
-                class="draggable clickable">
-            </a-box>
-            
-            <!-- Playhead (current position indicator) -->
-            <a-box 
-                id="playhead"
-                position="0 0 0.02"
-                width="0.02" 
-                height="0.25" 
-                depth="0.05" 
-                color="#FF5722">
-            </a-box>
-            
-            <!-- Timeline Label -->
-            <a-text 
-                value="Trim Timeline" 
-                position="0 0.15 0.01" 
-                align="center" 
-                width="1" 
-                color="#BBB">
-            </a-text>
+            <a-text value="Trim Timeline" position="0 0.15 0.01" align="center" width="1" color="#BBB"></a-text>
         </a-entity>
 
         <!-- Video Library Panel (left side) -->
         <a-entity id="video-library" position="-2.5 1.6 -2.5" rotation="0 30 0">
-            <a-plane 
-                width="1.5" 
-                height="2" 
-                color="#1E1E1E"
-                material="shader: flat">
-            </a-plane>
+            <a-plane width="1.5" height="2" color="#1E1E1E" material="shader: flat"></a-plane>
             
-            <a-text 
-                value="Quest Videos" 
-                position="0 0.95 0.01" 
-                align="center" 
-                width="1.5" 
-                color="#FFF">
-            </a-text>
+            <a-text value="Quest Videos" position="0 0.95 0.01" align="center" width="1.5" color="#FFF"></a-text>
             
             <!-- Video grid will be dynamically populated -->
             <a-entity id="video-grid" position="0 0.3 0.01"></a-entity>
@@ -195,90 +163,38 @@
                 height="0.2" 
                 depth="0.05" 
                 color="#6200EE"
-                class="clickable"
-                sound="on: click; src: #click-sound">
+                class="clickable">
                 <a-text value="Browse Files" align="center" position="0 0 0.03" width="2" color="#FFF"></a-text>
             </a-box>
         </a-entity>
 
         <!-- Export Panel (right side) -->
         <a-entity id="export-panel" position="2.5 1.6 -2.5" rotation="0 -30 0">
-            <a-plane 
-                width="1.5" 
-                height="2" 
-                color="#1E1E1E"
-                material="shader: flat">
-            </a-plane>
+            <a-plane width="1.5" height="2" color="#1E1E1E" material="shader: flat"></a-plane>
             
-            <a-text 
-                value="Export Settings" 
-                position="0 0.95 0.01" 
-                align="center" 
-                width="1.5" 
-                color="#FFF">
-            </a-text>
+            <a-text value="Export Settings" position="0 0.95 0.01" align="center" width="1.5" color="#FFF"></a-text>
             
-            <!-- Compression Selector -->
+            <!-- Quality selector -->
             <a-entity id="compression-selector" position="0 0.5 0.01">
                 <a-text value="Quality:" width="1.5" color="#BBB"></a-text>
-                
-                <a-box 
-                    id="quality-light"
-                    position="0 -0.15 0"
-                    width="0.4" 
-                    height="0.15" 
-                    depth="0.05" 
-                    color="#4CAF50"
-                    class="clickable">
+                <a-box id="quality-light" position="0 -0.15 0" width="0.4" height="0.15" depth="0.05" color="#4CAF50" class="clickable">
                     <a-text value="Light" align="center" position="0 0 0.03" width="1" color="#FFF"></a-text>
                 </a-box>
-                
-                <a-box 
-                    id="quality-medium"
-                    position="0 -0.35 0"
-                    width="0.4" 
-                    height="0.15" 
-                    depth="0.05" 
-                    color="#FF9800"
-                    class="clickable">
+                <a-box id="quality-medium" position="0 -0.35 0" width="0.4" height="0.15" depth="0.05" color="#FF9800" class="clickable">
                     <a-text value="Medium" align="center" position="0 0 0.03" width="1" color="#FFF"></a-text>
                 </a-box>
-                
-                <a-box 
-                    id="quality-strong"
-                    position="0 -0.55 0"
-                    width="0.4" 
-                    height="0.15" 
-                    depth="0.05" 
-                    color="#F44336"
-                    class="clickable">
+                <a-box id="quality-strong" position="0 -0.55 0" width="0.4" height="0.15" depth="0.05" color="#F44336" class="clickable">
                     <a-text value="Strong" align="center" position="0 0 0.03" width="1" color="#FFF"></a-text>
                 </a-box>
             </a-entity>
             
-            <!-- Format Selector -->
+            <!-- Format selector -->
             <a-entity id="format-selector" position="0 -0.3 0.01">
                 <a-text value="Format:" width="1.5" color="#BBB"></a-text>
-                
-                <a-box 
-                    id="format-mp4"
-                    position="-0.25 -0.15 0"
-                    width="0.35" 
-                    height="0.15" 
-                    depth="0.05" 
-                    color="#2196F3"
-                    class="clickable">
+                <a-box id="format-mp4" position="-0.25 -0.15 0" width="0.35" height="0.15" depth="0.05" color="#2196F3" class="clickable">
                     <a-text value="MP4" align="center" position="0 0 0.03" width="1" color="#FFF"></a-text>
                 </a-box>
-                
-                <a-box 
-                    id="format-gif"
-                    position="0.25 -0.15 0"
-                    width="0.35" 
-                    height="0.15" 
-                    depth="0.05" 
-                    color="#9C27B0"
-                    class="clickable">
+                <a-box id="format-gif" position="0.25 -0.15 0" width="0.35" height="0.15" depth="0.05" color="#9C27B0" class="clickable">
                     <a-text value="GIF" align="center" position="0 0 0.03" width="1" color="#FFF"></a-text>
                 </a-box>
             </a-entity>
@@ -291,64 +207,101 @@
                 height="0.2" 
                 depth="0.05" 
                 color="#6200EE"
-                class="clickable"
-                sound="on: click; src: #success-sound">
+                class="clickable">
                 <a-text value="EXPORT" align="center" position="0 0 0.03" width="2" color="#FFF"></a-text>
             </a-box>
             
-            <!-- Size Estimate -->
-            <a-text 
-                id="size-estimate"
-                value="Est. Size: --" 
-                position="0 -0.95 0.01" 
-                align="center" 
-                width="1.2" 
-                color="#BBB">
-            </a-text>
+            <a-text id="size-estimate" value="Est. Size: --" position="0 -0.95 0.01" align="center" width="1.2" color="#BBB"></a-text>
         </a-entity>
 
-        <!-- Help Panel (floating above) -->
-        <a-entity id="help-panel" position="0 2.8 -3" visible="false">
-            <a-plane 
-                width="2" 
-                height="1" 
-                color="#1E1E1E" 
-                opacity="0.95"
-                material="shader: flat">
-            </a-plane>
+        <!-- Help Panel (floating above) - Shows desktop OR VR controls -->
+        <a-entity id="help-panel" position="0 2.8 -3" visible="true">
+            <a-plane width="2.5" height="1.2" color="#1E1E1E" opacity="0.95" material="shader: flat"></a-plane>
             
+            <!-- Desktop Instructions -->
             <a-text 
-                value="Controls:\n\nTrigger = Select\nGrip = Drag\nThumbstick = Scrub Video\n\nPoint at elements to interact" 
+                id="desktop-instructions"
+                value="DESKTOP CONTROLS:\n\nMouse = Look Around\nWASD = Move Camera\nClick = Select Buttons\n\nClick 'Browse Files' to start!"
                 position="0 0 0.01" 
                 align="center" 
-                width="1.8" 
+                width="2.2" 
                 color="#FFF"
-                line-height="1.5">
+                line-height="1.4"
+                visible="true">
+            </a-text>
+            
+            <!-- VR Instructions -->
+            <a-text 
+                id="vr-instructions"
+                value="VR CONTROLS:\n\nTrigger = Select\nGrip = Drag\nThumbstick = Scrub\n\nPoint lasers at buttons!"
+                position="0 0 0.01" 
+                align="center" 
+                width="2.2" 
+                color="#FFF"
+                line-height="1.4"
+                visible="false">
             </a-text>
         </a-entity>
 
-        <!-- VR Controllers (hands) -->
-        <a-entity id="left-hand" 
-                  laser-controls="hand: left" 
-                  raycaster="objects: .clickable, .draggable; far: 10"
-                  line="color: #03DAC6; opacity: 0.75">
-        </a-entity>
-        
-        <a-entity id="right-hand" 
-                  laser-controls="hand: right" 
-                  raycaster="objects: .clickable, .draggable; far: 10"
-                  line="color: #03DAC6; opacity: 0.75">
+        <!-- Debug Notification Panel -->
+        <a-entity id="debug-notification" position="0 2.2 -2.5" visible="false">
+            <a-plane width="2.5" height="0.6" color="#1a1a1a" opacity="0.95" material="shader: flat"></a-plane>
+            
+            <a-text 
+                id="debug-text"
+                value="Debug Info" 
+                position="0 0.1 0.01" 
+                align="center" 
+                width="2.3" 
+                color="#03DAC6"
+                wrap-count="40"
+                line-height="1.3">
+            </a-text>
+            
+            <a-text 
+                id="debug-subtext"
+                value="" 
+                position="0 -0.15 0.01" 
+                align="center" 
+                width="2.2" 
+                color="#BBB"
+                wrap-count="45"
+                line-height="1.2">
+            </a-text>
         </a-entity>
 
-        <!-- Camera Rig (user's viewpoint) -->
+        <!-- Camera Rig - HYBRID: Works for both desktop and VR -->
         <a-entity id="camera-rig" position="0 1.6 0">
-            <a-camera id="camera" look-controls wasd-controls="enabled: false">
-                <!-- Reticle (center dot for gaze-based interaction) -->
+            <!-- Desktop/VR Camera with WASD enabled for desktop -->
+            <a-camera 
+                id="camera" 
+                look-controls="enabled: true; pointerLockEnabled: false"
+                wasd-controls="enabled: true; acceleration: 20">
+                <!-- Cursor for desktop mouse clicks -->
                 <a-cursor 
+                    id="desktop-cursor"
                     color="#03DAC6"
-                    raycaster="objects: .clickable, .draggable; far: 10">
+                    raycaster="objects: .clickable, .draggable; far: 10"
+                    fuse="false">
                 </a-cursor>
             </a-camera>
+            
+            <!-- VR Controllers (only active in VR mode) -->
+            <a-entity 
+                id="left-hand" 
+                laser-controls="hand: left" 
+                raycaster="objects: .clickable, .draggable; far: 10"
+                line="color: #03DAC6; opacity: 0.75"
+                visible="false">
+            </a-entity>
+            
+            <a-entity 
+                id="right-hand" 
+                laser-controls="hand: right" 
+                raycaster="objects: .clickable, .draggable; far: 10"
+                line="color: #03DAC6; opacity: 0.75"
+                visible="false">
+            </a-entity>
         </a-entity>
     </a-scene>
 
